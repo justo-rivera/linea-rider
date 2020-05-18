@@ -28,7 +28,33 @@ let isErasing = false;
 let isDrawing = false;
 let lines = []
 const lineWidth = 14;
+let lineFriction = 0;
+let startPos;
 
+class Game {
+  constructor(){
+    this.levels = [level1, level2, level3];
+    this.currentLevel = null;
+    this.levelCounter = 0;
+  }
+  nextLevel(){
+    //splashScreen();
+    this.levelCounter++;
+    this.currentLevel = levels[levelCounter]
+    cleanWorld();
+    loadLevel(this.currentLevel)
+  }
+  loadLevel(level){
+    level(nextLevel)
+  }
+}
+class Level {
+  constructor(callNextLevel){
+    this.nextLevel = callNextLevel;
+    this.bucket = null;
+    this.collisionCheck = null;
+  }
+}
 function level1(){
   bucket = createBucket({x: 420, y: 535})
   Events.on(engine, 'collisionStart', event => {
@@ -79,23 +105,66 @@ function level3(){
     image.src='images/bucket.gif';
     if(bucket.position.x > 1000) moveBucket = -10
     if(bucket.position.x < 10) moveBucket = 10
-    Body.translate(bucket, {x: moveBucket, y: 0})
     Body.setVelocity(bucket, {x: moveBucket, y: 0})
+    Body.translate(bucket, {x: moveBucket, y: 0})
     context.drawImage(image, bucket.position.x-40, bucket.position.y-80)
   }
   additionalStart = function(){
     Body.setPosition(bucket, initialPosition)
     moveBucket = 10;
   }
+  collisionCheck = function(collision){
+    if( collision.bodyA === bucket.sensor || collision.bodyB === bucket.sensor){
+      level4();
+    }
+  }
+  loadCollision(collisionCheck)
+}
+function level4(){
+  cleanWorld();
+  bucket = createBucket({x: 795, y: 155})
+  Body.rotate(bucket,-oneDegree*28);
+  const trampolineStart = transformVector({x: 400, y:550})
+  const trampolineEnd = transformVector({x: 540, y: 550})
+  let trampoline = rectangleXY(trampolineStart, trampolineEnd, 15, {isStatic: true, fillStyle: 'white', restitution: 3, chamfer: {radius: 8}, render: {visible: false}})
+  
+  addBody(trampoline)
+  additionalDrawing = function(){
+    let image = new Image();
+    image.src='images/bucket.gif';
+    let trampolineImage = new Image();
+    trampolineImage.src = 'images/trampoline.png'
+    context.translate(bucket.position.x, bucket.position.y)
+    context.rotate(-oneDegree*28)
+    context.translate(-bucket.position.x, -bucket.position.y)
+    context.drawImage(image, bucket.position.x-40, bucket.position.y-80)
+    context.translate(bucket.position.x, bucket.position.y)
+    context.rotate(oneDegree*28)
+    context.translate(-bucket.position.x, -bucket.position.y)
+    context.drawImage(trampolineImage, trampolineStart.x-10, trampolineEnd.y-30, 200, 100)
+  }
+  additionalStart = function(){
+
+  }
+  // lineFriction = 0.3
+  startPos = {x: 55, y: 208}
+  Events.on(engine, 'beforeUpdate', function() {
+    var gravity = engine.world.gravity;
+    // Body.applyForce(trampoline, trampoline.position, {
+    //     x: -gravity.x * gravity.scale * trampoline.mass,
+    //     y: -gravity.y * gravity.scale * trampoline.mass
+    // });
+});
+
 }
 function createBucket(position){
   position = transformVector(position);
-  let leftWall = addLine({x: position.x-3, y: position.y-10},  {x: position.x+5, y: position.y+50}, 3)
-  let floorBucket = addLine({x: position.x + 5, y: position.y+50}, {x: position.x + 60, y: position.y+50}, 3)
+  let leftWall = addLine({x: position.x-12, y: position.y-15},  {x: position.x+5, y: position.y+50}, 3)
+  let floorBucket = addLine({x: position.x-4, y: position.y+50}, {x: position.x + 50, y: position.y+50}, 3)
 
   let bucketSensor = Bodies.circle(floorBucket.position.x, floorBucket.position.y-15, 10, {isSensor: true, isStatic: true})
 
-  let rightWall = addLine({x: position.x+60, y: position.y+50}, {x: position.x+68, y: position.y-10}, 3)
+  let rightWall = addLine({x: position.x+45, y: position.y+50}, {x: position.x+58, y: position.y-15}, 3)
   let newBucket = Body.create({
     isStatic: true
   })
@@ -109,6 +178,12 @@ function cleanWorld(){
   World.remove(engine.world, Composite.allBodies(engine.world));
   lines.length = 0;
   additionalObjects.length = 0;
+}
+function loadCollision(collisionChecker){
+  Events.on(engine, 'collisionStart', event => {
+    const pairs = event.pairs;
+    pairs.forEach( collision => {collisionChecker(collision)} )
+  })
 }
 function InitCanvas(){
     context = document.getElementById('pizarra').getContext("2d")
@@ -174,20 +249,7 @@ function InitCanvas(){
       }
     });
 
-    window.addEventListener('keydown', (ev) => {
-      if(ev.key === 'ArrowRight'){
-        panX+=10
-      }
-      if(ev.key === 'ArrowLeft'){
-        panX-=10
-      }
-      if(ev.key === 'ArrowUp'){
-        scaleFactor-=0.05
-      }
-      if(ev.key === 'ArrowDown'){
-        scaleFactor+=0.05
-      }
-      
+    window.addEventListener('keydown', (ev) => {      
       addPlayerAndStart();
     })
 /*     window.addEventListener('auxclick', (ev) => {
@@ -198,28 +260,11 @@ function InitCanvas(){
     })
   }
 
-// create a renderer
-// var render = Render.create({
-//     element: pizarra,
-//     engine: engine
-// });
-
-// // create two boxes and a ground
-// var boxB = Bodies.rectangle(50, 50, 80, 20, {friction: 0.0005});
-
-// // add all of the bodies to the world
-// World.add(engine.world, [boxB]);
-
-// run the engine
-
-// run the renderer
-// Render.run(render);
-
 function render() {
   window.requestAnimationFrame(render);
   if(isDrawing === false){
     var bucketDraw = [boxB] 
-    //bucketDraw = Composite.allBodies(engine.world);
+    // bucketDraw = Composite.allBodies(engine.world);
 
 
     context.fillStyle = '#fff';
@@ -238,6 +283,7 @@ function render() {
 }
 function drawVertices(bodies){
   for (var i = 0; i < bodies.length; i ++) {
+    if(!bodies[i].render.visible) continue
     context.beginPath();
       var vertices = bodies[i].vertices;
       context.fillStyle = bodies[i].fillStyle;
@@ -259,14 +305,15 @@ function addBody(body){
   additionalObjects.push(body)
   World.add(engine.world, [body])
 }
-function addPlayerAndStart(){
+function addPlayerAndStart(position = {x: 50, y: 50}, velocity = {x: 5, y:8}, rotation = 28*oneDegree){
+  position = startPos || position;
   if (typeof boxB !== typeof undefined ) World.remove(engine.world,[boxB])
-      boxB = Bodies.rectangle(50, 50, 40, 20, {friction: 0, inertia: 5, mass: 0.02, restitution:0, chamfer: {radius: 10}, airFriction: 0});
+      boxB = Bodies.rectangle(position.x, position.y, 40, 20, {friction: 0, inertia: 5, mass: 0.02, restitution:0, chamfer: {radius: 10}, airFriction: 0});
       World.add(engine.world, [boxB]);
       boxB.friction = 0;
       boxB.fillStyle = "#0af"
-      Matter.Body.rotate(boxB, 28*oneDegree)
-      Matter.Body.setVelocity(boxB, {x: 5, y: 8})
+      Matter.Body.rotate(boxB, rotation)
+      Matter.Body.setVelocity(boxB, velocity)
       additionalStart();
       if(running === false){
         running = true;
@@ -296,10 +343,18 @@ function addLine(vectorStart, vectorEnd, weight = lineWidth){
   redrawLines(lines);
   let angle = getAngle(vectorStart, vectorEnd);
   let middlePoint = getMiddlePoint(vectorStart, vectorEnd)
-  let newRectangle = Bodies.rectangle(middlePoint.x, middlePoint.y, calcDistance(vectorStart, vectorEnd), weight, {isStatic: true, friction: 0} )
+  let newRectangle = Bodies.rectangle(middlePoint.x, middlePoint.y, calcDistance(vectorStart, vectorEnd), weight, {isStatic: true, friction: lineFriction} )
   newRectangle.collisionFilter.group = -1;
   Matter.Body.rotate(newRectangle, getAngle(vectorStart, vectorEnd));
   newRectangle.drawXY = vectorStart
+  return newRectangle;
+}
+
+function rectangleXY(vectorStart, vectorEnd, weight, constraints){
+  let angle = getAngle(vectorStart, vectorEnd);
+  let middlePoint = getMiddlePoint(vectorStart, vectorEnd)
+  let newRectangle = Bodies.rectangle(middlePoint.x, middlePoint.y, calcDistance(vectorStart, vectorEnd), weight, constraints )
+  Matter.Body.rotate(newRectangle, getAngle(vectorStart, vectorEnd));
   return newRectangle;
 }
 

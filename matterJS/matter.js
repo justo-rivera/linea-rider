@@ -279,7 +279,7 @@ var Axes = _dereq_('../geometry/Axes');
                     inverseInertia: part.inverseInertia
                 };
 
-                part.restitution = 0;
+                //part.restitution = 0;
                 //part.friction = 1;
                 part.mass = part.inertia = part.density = Infinity;
                 part.inverseMass = part.inverseInertia = 0;
