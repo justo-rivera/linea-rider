@@ -55,6 +55,43 @@ class Level {
     this.collisionCheck = null;
   }
 }
+class Portal {
+  constructor(portalEnter, portalExit){
+    this.entryPortal = this.createPortal(portalEnter, 180*oneDegree)
+    this.exitPortal = this.createPortal(portalExit, 90*oneDegree)
+    this.entryPortal.position = portalEnter
+    this.exitPortal.position = portalExit
+  }
+  createPortal(position, angle){
+    // const radius = 40
+    // let circleX = position.x + radius
+    // let circleY = position.y + radius
+    let positionEnd = {x: position.x + 50, y: position.y}
+    return rectangleXY(position, positionEnd, 50, {isStatic: true, isSensor: true, fillStyle:"purple", angle: angle})
+  }
+  teleport(body, type){
+    if(type === 'entry') this.teleportToExit(body)
+    if(type === 'exit') this.teleportToEntry(body)
+  }
+  teleportToExit(body){
+    let rotationAngle = this.entryPortal.angle - this.exitPortal.angle;
+    let rotateVelocity = Vector.rotate(body.velocity, rotationAngle)
+    console.log(rotationAngle)
+    Body.setVelocity(body, rotateVelocity)
+    Body.setPosition(body, this.exitPortal.position)
+  }
+  teleportToEntry(body){
+    // let rotationAngle = this.entryPortal.angle - this.exitPortal.angle;
+    // console.log('velocity')
+    // console.log(body.velocity)
+    // let rotateVelocity = Vector.rotate(body.velocity, rotationAngle)
+    // console.log('rotateVelocity')
+    // console.log(rotateVelocity)
+    // Body.setVelocity(body, rotateVelocity)
+    // Body.setPosition(body, this.entryPortal.position)
+  }
+
+}
 function level1(){
   bucket = createBucket({x: 420, y: 535})
   Events.on(engine, 'collisionStart', event => {
@@ -128,6 +165,12 @@ function level4(){
   const trampolineEnd = transformVector({x: 540, y: 550})
   let trampoline = rectangleXY(trampolineStart, trampolineEnd, 15, {isStatic: true, fillStyle: 'white', restitution: 3, chamfer: {radius: 8}, render: {visible: false}})
   
+  const obstacle1Position = transformVector({x: 161, y: 341});
+  const obstacle1End = transformVector({x: 50, y: 441})
+  let obstacle1 = rectangleXY(obstacle1Position, obstacle1End, 16, {isStatic: true, fillStyle: 'black'});
+  const obstacle1StartPosition = {x: obstacle1.position.x, y: obstacle1.position.y}
+  let moveObstacle1 = {x: -10, y: 10}
+  addBody(obstacle1)
   addBody(trampoline)
   additionalDrawing = function(){
     let image = new Image();
@@ -142,19 +185,82 @@ function level4(){
     context.rotate(oneDegree*28)
     context.translate(-bucket.position.x, -bucket.position.y)
     context.drawImage(trampolineImage, trampolineStart.x-10, trampolineEnd.y-30, 200, 100)
+    Body.translate(obstacle1, moveObstacle1)
+    Body.setVelocity(obstacle1, moveObstacle1)
+    if(obstacle1.position.x < 30 || obstacle1.position.y <= 0){
+      moveObstacle1 = Vector.mult(moveObstacle1, -1)
+    }
   }
   additionalStart = function(){
-
+    Body.setPosition(obstacle1, obstacle1StartPosition);
+    moveObstacle1 = {x: -10, y: 10};
   }
+  collisionCheck = function(collision){
+    if( collision.bodyA === bucket.sensor || collision.bodyB === bucket.sensor){
+      level5();
+    }
+  }
+  loadCollision(collisionCheck)
   // lineFriction = 0.3
   startPos = {x: 55, y: 208}
-  Events.on(engine, 'beforeUpdate', function() {
-    var gravity = engine.world.gravity;
-    // Body.applyForce(trampoline, trampoline.position, {
-    //     x: -gravity.x * gravity.scale * trampoline.mass,
-    //     y: -gravity.y * gravity.scale * trampoline.mass
-    // });
-});
+
+}
+function level5(){
+  cleanWorld();
+  portalEnter = transformVector({x: 135, y: 583})
+  portalExit = transformVector({x: 800, y: 160})
+  let portal = new Portal(portalEnter, portalExit)
+  addBody(portal.entryPortal)
+  addBody(portal.exitPortal)
+  bucket = createBucket({x: 624, y:201})
+  let orc = Bodies.rectangle(bucket.position.x, bucket.position.y-120, 80, 110, {mass: 0.001, render: {visible: false}, chamfer: {radius: 20}})
+  // orc.collisionFilter.group = -1  
+  const orcPos = orc.position
+  addBody(orc)
+  let diagonalObstacle = rectangleXY({x: 300, y: 300}, {x: 500, y: 500}, 18, {isStatic: true, fillStyle: 'black'})
+  const obstaclePosition = {x: diagonalObstacle.position.x, y: diagonalObstacle.position.y};
+  let moveObstacle = {x: 10, y: 10};
+  addBody(diagonalObstacle)
+  additionalDrawing = additionalDrawing = function(){
+    let image = new Image();
+    image.src='images/bucket.gif';
+    let orcImage = new Image();
+    orcImage.src='images/orc.gif'
+    context.drawImage(image, bucket.position.x-40, bucket.position.y-80)
+    context.drawImage(orcImage, orc.position.x-130, orc.position.y-100)
+    Body.setVelocity(diagonalObstacle, moveObstacle)
+    Body.translate(diagonalObstacle, moveObstacle)
+    if(diagonalObstacle.position.y <= 50 || diagonalObstacle.position.y > 700){
+      moveObstacle = Vector.mult(moveObstacle, -1)
+    }
+  }
+  additionalStart = function(){
+    World.remove(engine.world, [orc])
+    orc = Bodies.rectangle(bucket.position.x, bucket.position.y-120, 80, 110, {mass: 0.001, render: {visible: false}, chamfer: {radius: 20}})
+    moveObstacle = {x: 10, y: 10}
+    Body.setPosition(diagonalObstacle, obstaclePosition)
+    // orc.collisionFilter.group = -1  
+    addBody(orc)
+  }
+  startPos = false;
+  collisionCheck = function(collision){
+    if(collision.bodyA === bucket.sensor || collision.bodyB === bucket.sensor){
+      console.log('you won!!')
+    }
+    if(collision.bodyA === portal.entryPortal){
+      portal.teleport(collision.bodyB, 'entry')
+    }
+    if(collision.bodyB === portal.entryPortal){
+      portal.teleport(collision.bodyA, 'entry')
+    }
+    if(collision.bodyA === portal.entryPortal){
+      portal.teleport(collision.bodyB, 'exit')
+    }
+    if(collision.bodyB === portal.entryPortal){
+      portal.teleport(collision.bodyA, 'exit')
+    }
+  }
+  loadCollision(collisionCheck)
 
 }
 function createBucket(position){
@@ -373,7 +479,7 @@ function calcDistance(vector1, vector2){
     return Math.sqrt( (vector1.x - vector2.x)**2 + (vector1.y - vector2.y)**2 )
 }
 function getAngle(vector1, vector2){
-  const sign = (vector1.x - vector2.x)/Math.abs(vector1.x - vector2.x);
+  const sign = (vector1.x - vector2.x)/Math.abs(vector1.x - vector2.x) || 1;
   return Math.asin( sign * (vector1.y - vector2.y) / calcDistance(vector1, vector2))
 }
 function getMiddlePoint(vector1, vector2){
