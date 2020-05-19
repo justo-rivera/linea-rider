@@ -297,7 +297,7 @@ function level6(){
     addBody(bouncyWalls[2])
     addBody(bouncyWalls[3])
 
-    let lever = rectangleXY({x: 900, y: 500}, {x: 950, y: 500}, 40, {fillStyle: 'transparent', isSensor: true, isStatic: true, render: {visible: true}});
+    let lever = rectangleXY({x: 900, y: 500}, {x: 950, y: 500}, 40, {fillStyle: 'transparent', isSensor: true, isStatic: true, render: {visible: false}});
     lever.on = false;
     addBody(lever)
     let bucketObstacle = Bodies.rectangle(bucket.position.x, bucket.position.y-60, 120, 10, {isStatic: true, fillStyle: 'black', render: {visible: true}})
@@ -455,8 +455,8 @@ function InitCanvas(){
     pizarra.addEventListener('mousedown', ev => {
       if(ev.button !== 0) isErasing=true
       else{
-        x = transformX(ev.clientX);
-        y = transformY(ev.clientY);
+        x = transformX(ev.clientX - rect.left);
+        y = transformY(ev.clientY - rect.top);
         isDrawing = true;
       }
       console.log('x: ' + ev.clientX + ' y: ' + ev.clientY)
@@ -479,7 +479,7 @@ function InitCanvas(){
         }
       }
       if(isErasing === true){
-        const rectangle = Matter.Bodies.rectangle(transformX(ev.clientX), transformY(ev.clientY), 10,10)
+        const rectangle = Matter.Bodies.rectangle(transformX(ev.clientX - rect.left), transformY(ev.clientY - rect.top), 10,10)
         const matchedBody = Matter.Query.region(Composite.allBodies(engine.world), Matter.Bounds.create(rectangle.vertices))[0];
         if (matchedBody && matchedBody.lineIndex > -1) {
           World.remove(engine.world, matchedBody);
