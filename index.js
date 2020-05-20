@@ -31,6 +31,7 @@ let lines = []
 const lineWidth = 14;
 let lineFriction = 0;
 let startPos;
+let splashScreen = true;
 
 
 let bucketImage = new Image();
@@ -43,6 +44,8 @@ let leverOnImage = new Image();
 leverOnImage.src = 'images/on.png'
 let leverOffImage = new Image();
 leverOffImage.src = 'images/off.png'
+let splashImage = new Image();
+splashImage.src = 'images/splashgif.gif'
 
 class Game {
   constructor(){
@@ -104,6 +107,24 @@ class Portal {
     // Body.setPosition(body, this.entryPortal.position)
   }
 
+}
+function level0(){
+  let pizarra = document.getElementById('pizarra');
+  pizarra.hidden = true
+  context = document.getElementById('pizarra').getContext("2d")
+  //context.drawImage(splashImage, 0, 0)
+  window.setTimeout(function(){
+    document.getElementById('bodyy').removeChild(document.getElementById('splash'))
+    pizarra.hidden = false
+    context.font = "20px Georgia";
+    context.fillText("Click to draw lines, right click to erase", 110, 200);
+    context.fillText("the player will slide through the lines to get into the bucket", 130, 300, 600)
+    context.fillText("Press SPACE to start! ", 150, 400)
+    window.addEventListener('keydown', (ev) => {
+      if(splashScreen)      InitCanvas();
+      addPlayerAndStart();
+    })
+  }, 4200)
 }
 function level1(){
   bucket = createBucket({x: 420, y: 535});
@@ -192,6 +213,9 @@ function level4(){
     if(obstacle1.position.x < 30 || obstacle1.position.y <= 0){
       moveObstacle1 = Vector.mult(moveObstacle1, -1)
     }
+    if(boxB.velocity.y > 100){
+      Body.setVelocity(boxB, {x: boxB.velocity.x, y: boxB.velocity.y*0.5});
+    }
   }
   additionalStart = function(){
     Body.setPosition(obstacle1, obstacle1StartPosition);
@@ -204,7 +228,7 @@ function level4(){
   }
   loadCollision(collisionCheck)
 }
-function level5(){
+function level6(){
   startPos = {x: 200, y: 208}
   cleanWorld();
 
@@ -278,7 +302,7 @@ function level5(){
   loadCollision(collisionCheck)
 }
 
-function level6(){
+function level5(){
     startPos = false
     cleanWorld();
     bucket = createBucket({x: 200, y:551})
@@ -350,7 +374,11 @@ function level6(){
       Body.setVelocity(spinningObstacle2, 0)
       Body.setAngularVelocity(spinningObstacle, 0)
       Body.setAngularVelocity(spinningObstacle2, 0)
-      lever.on = false;
+      if(lever.on){
+        lever.on = false;
+        World.remove(engine.world, bucketObstacle)
+      }
+      addBody(bucketObstacle)
       moveVector = {x: -10, y: 5};
       spinAngle = 8*oneDegree;
       moveVector2 = {x: -10, y: -5};
@@ -445,6 +473,7 @@ function tiltCanvas(position, angle){
   context.translate(-position.x, -position.y)
 }
 function InitCanvas(){
+    splashScreen = false;
     context = document.getElementById('pizarra').getContext("2d")
     let pizarra = document.getElementById('pizarra')
     let x = 0
@@ -508,9 +537,10 @@ function InitCanvas(){
       }
     })
 
-    window.addEventListener('keydown', (ev) => {      
-      addPlayerAndStart();
-    })
+    // window.addEventListener('keydown', (ev) => {
+    //   if(splashScreen)      InitCanvas();
+    //   addPlayerAndStart();
+    // })
     
     window.addEventListener('contextmenu', ev => {
       ev.preventDefault();
