@@ -32,6 +32,7 @@ const lineWidth = 14;
 let lineFriction = 0;
 let startPos;
 let splashScreen = true;
+let isGameOver = false;
 
 
 let bucketImage = new Image();
@@ -75,8 +76,8 @@ class Portal {
   constructor(portalEnter, portalExit){
     this.entryPortal = this.createPortal(portalEnter, 180*oneDegree)
     this.exitPortal = this.createPortal(portalExit, 90*oneDegree)
-    this.entryPortal.position = portalEnter
-    this.exitPortal.position = portalExit
+    // this.entryPortal.position = portalEnter
+    // this.exitPortal.position = portalExit
   }
   createPortal(position, angle){
     // const radius = 40
@@ -116,10 +117,9 @@ function level0(){
   window.setTimeout(function(){
     document.getElementById('bodyy').removeChild(document.getElementById('splash'))
     pizarra.hidden = false
-    context.font = "20px Georgia";
-    context.fillText("Click to draw lines, right click to erase", 110, 200);
-    context.fillText("the player will slide through the lines to get into the bucket", 130, 300, 600)
-    context.fillText("Press SPACE to start! ", 150, 400)
+    context.font = "20px Nunito";
+    context.fillText("The player will slide through the lines you draw to get into the bucket!", 200, 240, 600)
+    context.fillText("Left click to draw lines, right click to erase", 250, 290);
     window.addEventListener('keydown', (ev) => {
       if(splashScreen)      InitCanvas();
       addPlayerAndStart();
@@ -163,19 +163,20 @@ function level3(){
   bucket = createBucket({x: 420, y: 500});
   const bucketPosition = {x: bucket.position.x, y: bucket.position.y}
 
-  let moveBucketVector = {x: 10, y: 0};
+  let moveBucketVector = {x: 7, y: 0};
 
   additionalStart = function(){
-    moveBucketVector = {x: 10, y: 0};
+    moveBucketVector = {x: 7, y: 0};
     Body.setPosition(bucket, bucketPosition)
   }
   additionalDrawing = function(){
     
+    if(bucket.position.x > 1000) moveBucketVector.x = -7
+    if(bucket.position.x < 10) moveBucketVector.x = 7
+    moveStaticObject(bucket, moveBucketVector)
+    
     context.drawImage(bucketImage, bucket.position.x-40, bucket.position.y-80)
 
-    if(bucket.position.x > 1000) moveBucketVector.x = -10
-    if(bucket.position.x < 10) moveBucketVector.x = 10
-    moveStaticObject(bucket, moveBucketVector)
   }
   collisionCheck = function(collision){
     if( collision.bodyA === bucket.sensor || collision.bodyB === bucket.sensor){
@@ -228,7 +229,7 @@ function level4(){
   }
   loadCollision(collisionCheck)
 }
-function level6(){
+function level5(){
   startPos = {x: 200, y: 208}
   cleanWorld();
 
@@ -240,7 +241,7 @@ function level6(){
 
   bucket = createBucket({x: 624, y:201})
   let orc = Bodies.rectangle(bucket.position.x, bucket.position.y-120, 80, 55, {mass: 0.001, render: {visible: false}, fillStyle: 'transparent', chamfer: {radius: 20}})
-  let orc2 = Bodies.rectangle(orc.position.x+20, orc.position.y-55, 80, 55, {mass: 0.001, render: {visible: false}, fillStyle: 'transparent', chamfer: {radius: 20}})
+  let orc2 = Bodies.rectangle(orc.position.x+10, orc.position.y-55, 80, 55, {mass: 0.001, render: {visible: false}, fillStyle: 'transparent', chamfer: {radius: 20}})
   addBody(orc)
   addBody(orc2)
   
@@ -258,6 +259,12 @@ function level6(){
     context.drawImage(bucketImage, bucket.position.x-40, bucket.position.y-80)
     context.drawImage(orcImage, orc.position.x-43, orc.position.y-30, 85,60)
     context.drawImage(orcImage, orc2.position.x-43, orc2.position.y-30, 85,60)
+    const prevFill = context.fillStyle;
+    context.font = "30px Nunito";
+    context.fillStyle = "purple";
+    context.fillText("ENTER", portal.entryPortal.position.x-35, portal.entryPortal.position.y-40)
+    context.fillText("EXIT", portal.exitPortal.position.x-35, portal.exitPortal.position.y-40)
+    context.fillStyle = prevFill;
     
     
     moveStaticObject(diagonalObstacle, moveObstacleVector)
@@ -274,7 +281,7 @@ function level6(){
     orc = Bodies.rectangle(bucket.position.x, bucket.position.y-120, 80, 55, {mass: 0.001, render: {visible: false}, fillStyle: 'transparent', chamfer: {radius: 20}})
     addBody(orc)
 
-    orc2 = Bodies.rectangle(orc.position.x+20, orc.position.y-55, 80, 55, {mass: 0.001, render: {visible: false}, fillStyle: 'transparent', chamfer: {radius: 20}})
+    orc2 = Bodies.rectangle(orc.position.x+10, orc.position.y-55, 80, 55, {mass: 0.001, render: {visible: false}, fillStyle: 'transparent', chamfer: {radius: 20}})
     addBody(orc2)
 
     moveObstacleVector = {x: 10, y: 10}
@@ -302,7 +309,7 @@ function level6(){
   loadCollision(collisionCheck)
 }
 
-function level5(){
+function level6(){
     startPos = false
     cleanWorld();
     bucket = createBucket({x: 200, y:551})
@@ -377,8 +384,9 @@ function level5(){
       if(lever.on){
         lever.on = false;
         World.remove(engine.world, bucketObstacle)
+        bucketObstacle = Bodies.rectangle(bucket.position.x, bucket.position.y-60, 120, 10, {isStatic: true, fillStyle: 'black', render: {visible: true}})
+        addBody(bucketObstacle)
       }
-      addBody(bucketObstacle)
       moveVector = {x: -10, y: 5};
       spinAngle = 8*oneDegree;
       moveVector2 = {x: -10, y: -5};
@@ -409,8 +417,21 @@ function level5(){
           World.remove(engine.world, bucketObstacle)
         }
       }
+      if(collision.bodyA === bucket.sensor || collision.bodyB === bucket.sensor){
+        gameOver();
+      }
     }
     loadEndCollision(collisionEndChecker)
+}
+function gameOver(){
+  isGameOver = true;
+  window.setTimeout(() => {
+  cleanWorld();
+  context.fillStyle = '#fff';
+  context.fillRect(0, 0, pizarra.width, pizarra.height);
+  context.fillStyle = '#000'
+  context.fillText("Wow! You made it", 240, 300)
+  }, 2500)
 }
 function nextLevel(levelFunc){
   let slideOut = window.setInterval(()=>{scaleFactor*=0.9; panX+=2/scaleFactor;panY+=2/scaleFactor},50)
@@ -418,12 +439,12 @@ function nextLevel(levelFunc){
 }
 function createBucket(position){
   position = transformVector(position);
-  let leftWall = addLine({x: position.x-12, y: position.y-15},  {x: position.x+5, y: position.y+50}, 1)
-  let floorBucket = addLine({x: position.x-4, y: position.y+50}, {x: position.x + 50, y: position.y+50}, 1)
+  let leftWall = addLine({x: position.x-12, y: position.y-18},  {x: position.x+5, y: position.y+50}, 2)
+  let floorBucket = addLine({x: position.x-4, y: position.y+50}, {x: position.x + 50, y: position.y+50}, 2)
 
   let bucketSensor = Bodies.circle(floorBucket.position.x, floorBucket.position.y-15, 10, {isSensor: true, isStatic: true})
 
-  let rightWall = addLine({x: position.x+45, y: position.y+50}, {x: position.x+58, y: position.y-15}, 1)
+  let rightWall = addLine({x: position.x+45, y: position.y+50}, {x: position.x+58, y: position.y-18}, 2)
 
   let newBucket = Body.create({
     isStatic: true
@@ -451,9 +472,9 @@ function createWalls(){
 function cleanWorld(){
   Events.off(engine, 'collisionStart')
   World.remove(engine.world, Composite.allBodies(engine.world));
-  addPlayerAndStart()
   lines.length = 0;
   additionalObjects.length = 0;
+  addPlayerAndStart()
 }
 function loadCollision(collisionChecker){
   Events.on(engine, 'collisionStart', event => {
@@ -494,6 +515,12 @@ function InitCanvas(){
     pizarra.addEventListener('mousemove', ev => {
       if (isDrawing === true) {
         redrawLines(lines);
+        context.save();
+        context.translate(panX,panY);
+        context.scale(scaleFactor,scaleFactor);
+        additionalDrawing();
+        drawVertices(additionalObjects);
+        context.restore();
         const endX = transformX(ev.clientX);
         const endY = transformY(ev.clientY);
         let vectorStart = {x: x, y: y};
@@ -548,24 +575,26 @@ function InitCanvas(){
   }
 
 function render() {
-  window.requestAnimationFrame(render);
-  if(isDrawing === false){
-    var bucketDraw = [boxB] 
-    // bucketDraw = Composite.allBodies(engine.world);
+  if(!isGameOver){
+    window.requestAnimationFrame(render);
+    if(isDrawing === false){
+      var bucketDraw = [boxB] 
+      // bucketDraw = Composite.allBodies(engine.world);
 
 
-    context.fillStyle = '#fff';
-    context.fillRect(0, 0, pizarra.width, pizarra.height);
-    redrawLines(lines)
+      context.fillStyle = '#fff';
+      context.fillRect(0, 0, pizarra.width, pizarra.height);
+      redrawLines(lines)
 
-    context.save();
-    context.translate(panX,panY);
-    context.scale(scaleFactor,scaleFactor);
-    additionalDrawing();
-    drawVertices(bucketDraw);
-    drawVertices(additionalObjects);
-    context.restore();
+      context.save();
+      context.translate(panX,panY);
+      context.scale(scaleFactor,scaleFactor);
+      additionalDrawing();
+      drawVertices(bucketDraw);
+      drawVertices(additionalObjects);
+      context.restore();
 
+    }
   }
 }
 function drawVertices(bodies){
