@@ -120,8 +120,8 @@ function level0(){
     context.font = "20px Nunito";
     context.fillText("The player will slide through the lines you draw to get into the bucket!", 200, 240, 600)
     context.fillText("Left click to draw lines, right click to erase", 250, 290);
-    window.addEventListener('keydown', (ev) => {
-      if(splashScreen)      InitCanvas();*/
+    window.addEventListener('keydown', (ev) => {*/
+      if(splashScreen)      InitCanvas();
       addPlayerAndStart();
     //})
   }, 4200)
