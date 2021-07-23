@@ -116,14 +116,14 @@ function level0(){
   //context.drawImage(splashImage, 0, 0)
   window.setTimeout(function(){
     document.getElementById('bodyy').removeChild(document.getElementById('splash'))
-    pizarra.hidden = false
+    pizarra.hidden = false/*
     context.font = "20px Nunito";
     context.fillText("The player will slide through the lines you draw to get into the bucket!", 200, 240, 600)
     context.fillText("Left click to draw lines, right click to erase", 250, 290);
     window.addEventListener('keydown', (ev) => {
-      if(splashScreen)      InitCanvas();
+      if(splashScreen)      InitCanvas();*/
       addPlayerAndStart();
-    })
+    //})
   }, 4200)
 }
 function level1(){
